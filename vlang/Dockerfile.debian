@@ -1,0 +1,36 @@
+ARG BASEDEV_VERSION=v0.23.0
+
+FROM qmcgaw/basedevcontainer:${BASEDEV_VERSION}-debian
+
+WORKDIR /opt/vlang
+
+ARG USE_LOCAL
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    gnupg \
+    netbase \
+    wget \
+    ; \
+    rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gcc clang make git binutils && \
+    apt-get clean && rm -rf /var/cache/apt/archives/* && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY . /vlang-local
+
+RUN if [ -z "${USE_LOCAL}" ] ; then \
+    git clone https://github.com/vlang/v/ /opt/vlang && \
+    rm -rf /vlang-local ; \
+    else \
+    mv /vlang-local/* . && \
+    rm -rf /vlang-local ; \
+    fi
+
+RUN make && \
+    ln -s /opt/vlang/v /usr/local/bin/v
